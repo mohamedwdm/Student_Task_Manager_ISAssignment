@@ -18,16 +18,16 @@ class TaskCubit extends Cubit<TaskState> {
     fetchTasks();
   }
 
-  Future<void> fetchTasks() async {
+  Future<void> fetchTasks({bool forceRefresh = false}) async {
     if (_currentUserId == null) return;
     
-    // Only show loading for the very first fetch
-    if (state is! TaskLoaded) {
+    // Only show loading for the very first fetch or force refresh
+    if (state is! TaskLoaded || forceRefresh) {
       emit(TaskLoading());
     }
     
     try {
-      final tasks = await taskRepo.getTasks(_currentUserId!);
+      final tasks = await taskRepo.getTasks(_currentUserId!, forceRefresh: forceRefresh);
       _emitLoaded(tasks);
     } catch (e) {
       if (state is! TaskLoaded) {

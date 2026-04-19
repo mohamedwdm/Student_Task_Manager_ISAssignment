@@ -61,6 +61,7 @@ _i174.GetIt init(
       gh<_i460.SharedPreferences>(),
       gh<_i107.AuthRemoteDataSource>(),
       gh<_i847.ProfileRemoteDataSource>(),
+      gh<_i695.TaskDao>(),
     ),
   );
   gh.factory<_i888.AuthCubit>(() => _i888.AuthCubit(gh<_i507.AuthRepo>()));

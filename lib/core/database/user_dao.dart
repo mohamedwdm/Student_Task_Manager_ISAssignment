@@ -48,4 +48,9 @@ class UserDao {
       whereArgs: [id],
     );
   }
+
+  Future<void> clearAllUsers() async {
+    final db = await dbHelper.database;
+    await db.delete('users');
+  }
 }

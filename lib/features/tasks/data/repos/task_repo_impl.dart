@@ -13,12 +13,20 @@ class TaskRepoImpl implements TaskRepo {
   TaskRepoImpl(this.taskDao, this.remoteDataSource);
 
   @override
-  Future<List<TaskModel>> getTasks(int userId) async {
-    // 1. Fire off remote sync silently in the background
-    _syncTasksFromRemote(userId).ignore();
-
-    // 2. Instantly return local cached data to the UI
+  Future<List<TaskModel>> getTasks(int userId, {bool forceRefresh = false}) async {
+    // 1. Get local cached data
     final localData = await taskDao.getTasksByUserId(userId);
+    
+    // 2. If forced or empty, we MUST wait for the sync to complete
+    if (forceRefresh || localData.isEmpty) {
+      print('DEBUG SYNC: Syncing tasks (Force: $forceRefresh, Empty: ${localData.isEmpty})...');
+      await _syncTasksFromRemote(userId);
+      final freshData = await taskDao.getTasksByUserId(userId);
+      return freshData.map((e) => TaskModel.fromMap(e)).toList();
+    }
+
+    // 3. Normal load: return local instantly and sync in background
+    _syncTasksFromRemote(userId).ignore();
     return localData.map((e) => TaskModel.fromMap(e)).toList();
   }
 

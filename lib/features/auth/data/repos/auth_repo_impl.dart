@@ -7,6 +7,7 @@ import 'dart:io';
 import 'auth_repo.dart';
 import '../models/user_model.dart';
 import '../../../../core/database/user_dao.dart';
+import '../../../../core/database/task_dao.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../../../profile/data/datasources/profile_remote_data_source.dart';
 
@@ -16,12 +17,14 @@ class AuthRepoImpl implements AuthRepo {
   final SharedPreferences sharedPreferences;
   final AuthRemoteDataSource remoteDataSource;
   final ProfileRemoteDataSource profileRemoteDataSource;
+  final TaskDao taskDao;
 
   AuthRepoImpl(
     this.userDao,
     this.sharedPreferences,
     this.remoteDataSource,
     this.profileRemoteDataSource,
+    this.taskDao,
   );
 
   String _hashPassword(String password) {
@@ -116,6 +119,9 @@ class AuthRepoImpl implements AuthRepo {
   @override
   Future<void> logout() async {
     await sharedPreferences.remove('user_id');
+    // Wipe local cache for security and to force fresh sync on next login
+    await taskDao.clearAllTasks();
+    await userDao.clearAllUsers();
   }
 
   @override

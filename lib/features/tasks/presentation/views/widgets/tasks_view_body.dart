@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:student_task_manager/core/theme/spacing.dart';
 import 'package:student_task_manager/core/theme/text_styles.dart';
@@ -6,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/theme/colors.dart';
-import '../../../../auth/data/models/user_model.dart';
 import '../../../../auth/presentation/manager/auth_cubit.dart';
 import '../../../../auth/presentation/manager/auth_state.dart';
 import '../../manager/task_cubit.dart';
@@ -30,12 +28,10 @@ class _TasksViewBodyState extends State<TasksViewBody> {
     );
   }
 
-  /// TaskCubit needs a user id before [TaskCubit.fetchTasks] runs; otherwise state stays [TaskInitial]
-  /// and the list UI never reaches [TaskLoaded] (empty or not).
   void _loadTasksForCurrentUser() {
     final authState = context.read<AuthCubit>().state;
     if (authState is AuthSuccess) {
-      final user = authState.user as UserModel;
+      final user = authState.user;
       if (user.id != null) {
         context.read<TaskCubit>().init(user.id!);
       }
@@ -47,7 +43,7 @@ class _TasksViewBodyState extends State<TasksViewBody> {
     return BlocListener<AuthCubit, AuthState>(
       listenWhen: (previous, current) => current is AuthSuccess,
       listener: (context, state) {
-        final user = (state as AuthSuccess).user as UserModel;
+        final user = (state as AuthSuccess).user;
         if (user.id != null) {
           context.read<TaskCubit>().init(user.id!);
         }
@@ -96,181 +92,177 @@ class _TasksViewBodyState extends State<TasksViewBody> {
 
           // Content
           SafeArea(
-            child: CustomScrollView(
-              slivers: [
-                // Custom Header App Bar
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24.0,
-                      vertical: 16.0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            AppAvatar(),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Academic Curator',
-                              style: TextStyle(
-                                fontFamily: 'Plus Jakarta Sans',
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                                letterSpacing: -0.5,
+            child: RefreshIndicator(
+              onRefresh: () async {
+                await context.read<TaskCubit>().fetchTasks(forceRefresh: true);
+              },
+              backgroundColor: AppColors.surfaceContainerLowest,
+              color: AppColors.primary,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // Custom Header App Bar
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24.0,
+                        vertical: 16.0,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              AppAvatar(),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'Academic Curator',
+                                style: TextStyle(
+                                  fontFamily: 'Plus Jakarta Sans',
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                  letterSpacing: -0.5,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        // IconButton(
-                        //   icon: const Icon(
-                        //     Icons.logout,
-                        //     color: AppColors.primary,
-                        //   ),
-                        //   onPressed: () {
-                        //     // Handle logout logic (usually via AuthCubit)
-                        //   },
-                        // ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-                // Dashboard Stats
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 48),
-                    child: BlocBuilder<TaskCubit, TaskState>(
-                      builder: (context, state) {
-                        int activeCount = 0;
-                        double completionRate = 0;
-                        if (state is TaskLoaded) {
-                          final total = state.allTasks.length;
-                          final completed =
-                              state.allTasks.where((t) => t.isCompleted).length;
-                          activeCount = total - completed;
-                          if (total > 0) {
-                            completionRate = (completed / total) * 100;
+                  // Dashboard Stats
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 48),
+                      child: BlocBuilder<TaskCubit, TaskState>(
+                        builder: (context, state) {
+                          int activeCount = 0;
+                          double completionRate = 0;
+                          if (state is TaskLoaded) {
+                            final total = state.allTasks.length;
+                            final completed =
+                                state.allTasks
+                                    .where((t) => t.isCompleted)
+                                    .length;
+                            activeCount = total - completed;
+                            if (total > 0) {
+                              completionRate = (completed / total) * 100;
+                            }
                           }
-                        }
 
-                        return LayoutBuilder(
-                          builder: (context, constraints) {
-                            final isLarge = constraints.maxWidth > 700;
-                            final childContent = [
-                              Expanded(
-                                flex: isLarge ? 2 : 0,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                          return LayoutBuilder(
+                            builder: (context, constraints) {
+                              final isLarge = constraints.maxWidth > 700;
+                              final childContent = [
+                                Expanded(
+                                  flex: isLarge ? 2 : 0,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'DASHBOARD',
+                                        style: AppTextStyles.labelMedium,
+                                      ),
+                                      const SizedBox(height: AppSpacing.s),
+                                      const Text(
+                                        'Scholarly Focus',
+                                        style: AppTextStyles.heading1,
+                                      ),
+                                      const SizedBox(height: AppSpacing.l),
+                                      const Text(
+                                        'Your curated path for academic excellence. Manage your research, assignments, and lectures with editorial precision.',
+                                        style: AppTextStyles.bodyLarge,
+                                      ),
+                                      if (!isLarge)
+                                        const SizedBox(height: AppSpacing.xxl),
+                                    ],
+                                  ),
+                                ),
+                                Row(
                                   children: [
-                                    const Text(
-                                      'DASHBOARD',
-                                      style: AppTextStyles.labelMedium,
+                                    Expanded(
+                                      child: _buildStatCard(
+                                        value: activeCount.toString(),
+                                        label: 'Active Tasks',
+                                        bgColor: AppColors.surfaceContainerLow,
+                                        valueColor: AppColors.primary,
+                                        labelColor: AppColors.outline,
+                                      ),
                                     ),
-                                    const SizedBox(height: AppSpacing.s),
-                                    const Text(
-                                      'Scholarly Focus',
-                                      style: AppTextStyles.heading1,
+                                    const SizedBox(width: AppSpacing.l),
+                                    Expanded(
+                                      child: _buildStatCard(
+                                        value: '${completionRate.toInt()}%',
+                                        label: 'Completion',
+                                        bgColor: AppColors.surfaceContainerHigh,
+                                        valueColor: AppColors.secondary,
+                                        labelColor: AppColors.secondary
+                                            .withOpacity(0.6),
+                                      ),
                                     ),
-                                    const SizedBox(height: AppSpacing.l),
-                                    const Text(
-                                      'Your curated path for academic excellence. Manage your research, assignments, and lectures with editorial precision.',
-                                      style: AppTextStyles.bodyLarge,
-                                    ),
-                                    if (!isLarge)
-                                      const SizedBox(height: AppSpacing.xxl),
                                   ],
                                 ),
-                              ),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildStatCard(
-                                      value: activeCount.toString(),
-                                      label: 'Active Tasks',
-                                      bgColor: AppColors.surfaceContainerLow,
-                                      valueColor: AppColors.primary,
-                                      labelColor: AppColors.outline,
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.l),
-                                  Expanded(
-                                    child: _buildStatCard(
-                                      value: '${completionRate.toInt()}%',
-                                      label: 'Completion',
-                                      bgColor: AppColors.surfaceContainerHigh,
-                                      valueColor: AppColors.secondary,
-                                      labelColor: AppColors.secondary
-                                          .withOpacity(0.6),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ];
+                              ];
 
-                            if (isLarge) {
-                              return Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: childContent,
-                              );
-                            } else {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: childContent,
-                              );
-                            }
-                          },
-                        );
-                      },
+                              if (isLarge) {
+                                return Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: childContent,
+                                );
+                              } else {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: childContent,
+                                );
+                              }
+                            },
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ),
 
-                // Task List section
-                BlocBuilder<TaskCubit, TaskState>(
-                  builder: (context, state) {
-                    if (state is TaskInitial || state is TaskLoading) {
-                      return const SliverFillRemaining(
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    } else if (state is TaskError) {
-                      return SliverFillRemaining(
-                        child: Center(
-                          child: Text(
-                            state.message,
-                            style: const TextStyle(color: AppColors.error),
-                          ),
-                        ),
-                      );
-                    } else if (state is TaskLoaded) {
-                      final tasks = state.displayedTasks;
-
-                      if (tasks.isEmpty) {
+                  // Task List section
+                  BlocBuilder<TaskCubit, TaskState>(
+                    builder: (context, state) {
+                      if (state is TaskInitial || state is TaskLoading) {
+                        return const SliverFillRemaining(
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      } else if (state is TaskError) {
                         return SliverFillRemaining(
-                          hasScrollBody: false,
                           child: Center(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24.0,
-                                vertical: 24.0,
-                              ),
-                              child: Container(
+                            child: Text(
+                              state.message,
+                              style: const TextStyle(color: AppColors.error),
+                            ),
+                          ),
+                        );
+                      } else if (state is TaskLoaded) {
+                        final tasks = state.displayedTasks;
+
+                        if (tasks.isEmpty) {
+                          return SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: Center(
+                              child: Padding(
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 48,
-                                  horizontal: 24,
+                                  horizontal: 24.0,
+                                  vertical: 24.0,
                                 ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceContainerLow
-                                      .withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(48),
-                                  border: Border.all(
-                                    color: AppColors.outline.withOpacity(0.2),
-                                    style: BorderStyle.none,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 48,
+                                    horizontal: 24,
                                   ),
-                                ),
-                                child: SingleChildScrollView(
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceContainerLow
+                                        .withOpacity(0.3),
+                                    borderRadius: BorderRadius.circular(48),
+                                  ),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -285,9 +277,8 @@ class _TasksViewBodyState extends State<TasksViewBody> {
                                           child: Icon(
                                             Icons.auto_stories,
                                             size: 48,
-                                            color: AppColors.primary.withOpacity(
-                                              0.4,
-                                            ),
+                                            color: AppColors.primary
+                                                .withOpacity(0.4),
                                           ),
                                         ),
                                       ),
@@ -316,52 +307,52 @@ class _TasksViewBodyState extends State<TasksViewBody> {
                                 ),
                               ),
                             ),
+                          );
+                        }
+
+                        return SliverPadding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24.0,
+                            vertical: 0.0,
+                          ),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate((
+                              context,
+                              index,
+                            ) {
+                              final task = tasks[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 24.0),
+                                child: TaskCard(
+                                  task: task,
+                                  onToggle:
+                                      () => context
+                                          .read<TaskCubit>()
+                                          .toggleComplete(task),
+                                  onEdit:
+                                      () => context.push(
+                                        '/edit-task',
+                                        extra: task,
+                                      ),
+                                  onDelete: () {
+                                    if (task.id != null) {
+                                      context.read<TaskCubit>().deleteTask(
+                                        task.id!,
+                                      );
+                                    }
+                                  },
+                                ),
+                              );
+                            }, childCount: tasks.length),
                           ),
                         );
                       }
-
-                      return SliverPadding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24.0,
-                          vertical: 0.0,
-                        ),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate((
-                            context,
-                            index,
-                          ) {
-                            final task = tasks[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 24.0),
-                              child: TaskCard(
-                                task: task,
-                                onToggle:
-                                    () => context
-                                        .read<TaskCubit>()
-                                        .toggleComplete(task),
-                                onEdit:
-                                    () =>
-                                        context.push('/edit-task', extra: task),
-                                onDelete: () {
-                                  if (task.id != null) {
-                                    context.read<TaskCubit>().deleteTask(
-                                      task.id!,
-                                    );
-                                  }
-                                },
-                              ),
-                            );
-                          }, childCount: tasks.length),
-                        ),
-                      );
-                    }
-                    return const SliverToBoxAdapter(child: SizedBox.shrink());
-                  },
-                ),
-                const SliverPadding(
-                  padding: EdgeInsets.only(bottom: 120),
-                ), // Space for bottom nav and fab
-              ],
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    },
+                  ),
+                  const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
+                ],
+              ),
             ),
           ),
 

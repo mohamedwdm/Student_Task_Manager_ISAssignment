@@ -37,6 +37,11 @@ class TaskDao {
     return await db.delete('tasks', where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<void> clearAllTasks() async {
+    final db = await dbHelper.database;
+    await db.delete('tasks');
+  }
+
   /// Replaces all local tasks for [userId] with [tasks] from the remote API.
   Future<void> syncTasks(List<Map<String, dynamic>> tasks, int userId) async {
     final db = await dbHelper.database;
