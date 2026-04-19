@@ -14,13 +14,14 @@ class ProfileRepoImpl implements ProfileRepo {
 
   @override
   Future<UserModel> getProfile(int userId) async {
-    // 1. Sync from remote background
-    _syncProfileFromRemote(userId).ignore();
+    // 1. Sync from remote background with logging
+    _syncProfileFromRemote(userId).catchError((e) {
+      print('DEBUG SYNC ERROR: Failed to sync profile from remote: $e');
+    });
 
     // 2. Return local data instantly
     final userMap = await userDao.getUserById(userId);
     if (userMap == null) {
-      // If none, fetch remote and wait (first time fetch)
       return await _syncProfileFromRemote(userId);
     }
     return UserModel.fromMap(userMap);
@@ -29,7 +30,6 @@ class ProfileRepoImpl implements ProfileRepo {
   Future<UserModel> _syncProfileFromRemote(int userId) async {
     try {
       final remoteUser = await remoteDataSource.getProfile(userId);
-      // Update local cache but keep the password (api doesn't return password usually)
       final localUserMap = await userDao.getUserById(userId);
       final String? existingPassword = localUserMap?['password'];
       
@@ -47,8 +47,7 @@ class ProfileRepoImpl implements ProfileRepo {
       await userDao.insertUser(userToCache.toMap());
       return remoteUser;
     } catch (e) {
-      // Silently fail for background sync
-      throw e; // Reraise for direct calls
+      rethrow;
     }
   }
 
@@ -59,34 +58,44 @@ class ProfileRepoImpl implements ProfileRepo {
     // 1. Instantly update local
     await userDao.updateUser(user.id!, user.toMap());
     
-    // 2. Fire and forget remote action
-    _updateRemoteBackground(user).ignore();
-  }
-
-  Future<void> _updateRemoteBackground(UserModel user) async {
+    // 2. Remote action
     try {
-      await remoteDataSource.updateProfile(user.id!, user);
-    } catch (e) {}
+      print('DEBUG SYNC: Attempting Profile UPDATE for ID ${user.id}');
+      final response = await remoteDataSource.updateProfile(user.id!, user);
+      print('DEBUG: SERVER PROFILE RESPONSE: $response');
+    } catch (e) {
+      print('DEBUG SYNC ERROR: Failed to update profile on remote: $e');
+    }
   }
 
   @override
   Future<void> updatePhoto(int userId, String photoPath) async {
-    // 1. Instantly update local path (might be local file path from ImagePicker)
-    final userMap = await userDao.getUserById(userId);
-    if (userMap != null) {
-      userMap['profile_photo'] = photoPath;
-      await userDao.updateUser(userId, userMap);
-    }
+    // 1. Log action
+    print('DEBUG: Starting photo upload for User $userId Path $photoPath');
 
-    // 2. Upload to remote
+    // 2. Upload to remote first to get the URL
     try {
       final response = await remoteDataSource.uploadPhoto(userId, photoPath);
-      // If API returns a public URL, update local with public URL
-      if (response.containsKey('profile_photo')) {
+      print('DEBUG: Photo upload response: $response');
+
+      // 3. Update local cache with public URL from server
+      if (response != null && response.containsKey('profile_photo')) {
         final publicUrl = response['profile_photo'];
-        userMap!['profile_photo'] = publicUrl;
+        final userMap = await userDao.getUserById(userId);
+        if (userMap != null) {
+          userMap['profile_photo'] = publicUrl;
+          await userDao.updateUser(userId, userMap);
+          print('DEBUG: Local profile updated with remote URL: $publicUrl');
+        }
+      }
+    } catch (e) {
+      print('DEBUG SYNC ERROR: Failed to upload photo to remote: $e');
+      // Update local with local path for immediate UI feedback even if offline
+      final userMap = await userDao.getUserById(userId);
+      if (userMap != null) {
+        userMap['profile_photo'] = photoPath;
         await userDao.updateUser(userId, userMap);
       }
-    } catch (e) {}
+    }
   }
 }

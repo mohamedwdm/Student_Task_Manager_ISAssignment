@@ -34,10 +34,10 @@ class TaskRepoImpl implements TaskRepo {
 
   @override
   Future<TaskModel> addTask(TaskModel task) async {
-    // 1. Instantly save to local DB
-    final id = await taskDao.insertTask(task.toMap());
-    final newTaskWithId = TaskModel(
-      id: id,
+    // 1. Instantly save to local DB (using temporary SQLite ID)
+    final localId = await taskDao.insertTask(task.toMap());
+    final taskWithLocalId = TaskModel(
+      id: localId,
       userId: task.userId,
       title: task.title,
       description: task.description,
@@ -46,19 +46,38 @@ class TaskRepoImpl implements TaskRepo {
       isCompleted: task.isCompleted,
     );
     
-    // 2. Fire and forget remote action
-    _addRemoteTaskBackground(newTaskWithId).ignore();
-
-    // 3. Return the new task immediately with local SQLite ID
-    return newTaskWithId;
-  }
-
-  Future<void> _addRemoteTaskBackground(TaskModel task) async {
+    // 2. Sync to remote immediately
     try {
-      await remoteDataSource.addRemoteTask(task);
+      final remoteResponse = await remoteDataSource.addRemoteTask(taskWithLocalId);
+      print('DEBUG: SERVER TASK RESPONSE: $remoteResponse');
+      
+      final dynamic serverIdRaw = remoteResponse['id'];
+      int? serverId;
+      if (serverIdRaw is int) serverId = serverIdRaw;
+      if (serverIdRaw is String) serverId = int.tryParse(serverIdRaw);
+      
+      if (serverId != null) {
+        print('DEBUG SYNC: Local ID $localId successfully mapped to Server ID $serverId');
+        // 3. Delete the temporary local record and insert the correct server record
+        await taskDao.deleteTask(localId);
+        final taskWithServerId = TaskModel(
+          id: serverId,
+          userId: task.userId,
+          title: task.title,
+          description: task.description,
+          dueDate: task.dueDate,
+          priority: task.priority,
+          isCompleted: task.isCompleted,
+        );
+        await taskDao.insertTask(taskWithServerId.toMap());
+        return taskWithServerId;
+      }
     } catch (e) {
-      // Ignored handling for true local-first
+      print('DEBUG SYNC ERROR: Failed to add task to remote: $e');
+      // We still return the local task so the user can keep working offline
     }
+
+    return taskWithLocalId;
   }
 
   @override
@@ -68,14 +87,13 @@ class TaskRepoImpl implements TaskRepo {
     // 1. Instantly update local SQL
     await taskDao.updateTask(task.id!, task.toMap());
 
-    // 2. Fire and forget remote action
-    _updateRemoteTaskBackground(task.id!, task).ignore();
-  }
-
-  Future<void> _updateRemoteTaskBackground(int id, TaskModel task) async {
+    // 2. Remote action
     try {
-      await remoteDataSource.updateRemoteTask(id, task);
-    } catch (e) {}
+      print('DEBUG SYNC: Attempting UPDATE on Server ID ${task.id} for User ${task.userId}');
+      await remoteDataSource.updateRemoteTask(task.id!, task);
+    } catch (e) {
+      print('DEBUG SYNC ERROR: Failed to update task on remote: $e');
+    }
   }
 
   @override
@@ -83,18 +101,20 @@ class TaskRepoImpl implements TaskRepo {
     // 1. Instantly delete from local SQL
     await taskDao.deleteTask(taskId);
 
-    // 2. Fire and forget remote action
-    _deleteRemoteTaskBackground(taskId).ignore();
-  }
-
-  Future<void> _deleteRemoteTaskBackground(int taskId) async {
+    // 2. Remote action
     try {
+      print('DEBUG SYNC: Attempting DELETE on Server ID $taskId');
       await remoteDataSource.deleteRemoteTask(taskId);
-    } catch (e) {}
+    } catch (e) {
+      print('DEBUG SYNC ERROR: Failed to delete task on remote: $e');
+    }
   }
 
   @override
   Future<void> toggleComplete(TaskModel task) async {
+    if (task.id == null) return;
+
+    final isCompleted = !task.isCompleted;
     final updatedTask = TaskModel(
       id: task.id,
       userId: task.userId,
@@ -102,23 +122,18 @@ class TaskRepoImpl implements TaskRepo {
       description: task.description,
       dueDate: task.dueDate,
       priority: task.priority,
-      isCompleted: !task.isCompleted,
+      isCompleted: isCompleted,
     );
     
     // 1. Instantly update local SQL
-    if (updatedTask.id != null) {
-      await taskDao.updateTask(updatedTask.id!, updatedTask.toMap());
-    }
+    await taskDao.updateTask(task.id!, updatedTask.toMap());
 
-    // 2. Fire and forget remote action (using specific PATCH endpoint)
-    if (updatedTask.id != null) {
-      _toggleCompleteRemoteBackground(updatedTask.id!, updatedTask.isCompleted).ignore();
-    }
-  }
-
-  Future<void> _toggleCompleteRemoteBackground(int id, bool isCompleted) async {
+    // 2. Remote action (using specific PATCH endpoint)
     try {
-      await remoteDataSource.toggleCompleteRemote(id, isCompleted);
-    } catch (e) {}
+      print('DEBUG SYNC: Attempting TOGGLE on Server ID ${task.id} to $isCompleted');
+      await remoteDataSource.toggleCompleteRemote(task.id!, isCompleted);
+    } catch (e) {
+      print('DEBUG SYNC ERROR: Failed to toggle completion on remote: $e');
+    }
   }
 }

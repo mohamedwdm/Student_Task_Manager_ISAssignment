@@ -38,18 +38,17 @@ class TaskCubit extends Cubit<TaskState> {
 
   Future<void> addTask(TaskModel task) async {
     try {
-      // Create and get the returned task containing the local ID
+      // 1. Repo method now waits for server response and returns task with Server ID
       final createdTask = await taskRepo.addTask(task);
       
-      // Optimistically update instantly
+      // 2. Update state with the server-verified task
       if (state is TaskLoaded) {
         final currentTasks = (state as TaskLoaded).allTasks;
+        // Check if it already exists (unlikely in this flow but safe)
         final updatedList = List<TaskModel>.from(currentTasks)..add(createdTask);
         _emitLoaded(updatedList);
       }
-    } catch (e) {
-      // Ignored for UX smoothness as per local-first standard
-    }
+    } catch (e) {}
   }
 
   Future<void> updateTask(TaskModel task) async {
@@ -83,18 +82,30 @@ class TaskCubit extends Cubit<TaskState> {
   }
 
   Future<void> toggleComplete(TaskModel task) async {
-    final updatedTask = TaskModel(
-      id: task.id,
-      userId: task.userId,
-      title: task.title,
-      description: task.description,
-      dueDate: task.dueDate,
-      priority: task.priority,
-      isCompleted: !task.isCompleted,
-    );
+    try {
+      // 1. Call the specific repo method that handles the PATCH call
+      await taskRepo.toggleComplete(task);
 
-    // Call standard logic
-    await updateTask(updatedTask);
+      // 2. Update local state optimistically
+      if (state is TaskLoaded) {
+        final currentTasks = (state as TaskLoaded).allTasks;
+        final index = currentTasks.indexWhere((t) => t.id == task.id);
+        if (index != -1) {
+          final updatedList = List<TaskModel>.from(currentTasks);
+          final oldTask = updatedList[index];
+          updatedList[index] = TaskModel(
+            id: oldTask.id,
+            userId: oldTask.userId,
+            title: oldTask.title,
+            description: oldTask.description,
+            dueDate: oldTask.dueDate,
+            priority: oldTask.priority,
+            isCompleted: !oldTask.isCompleted,
+          );
+          _emitLoaded(updatedList);
+        }
+      }
+    } catch (e) {}
   }
 
   void setFilter(String filter) {

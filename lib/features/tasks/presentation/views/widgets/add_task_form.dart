@@ -9,6 +9,8 @@ import '../../../../../core/theme/spacing.dart';
 import '../../../../../core/theme/text_styles.dart';
 import '../../../data/models/task_model.dart';
 import '../../manager/task_cubit.dart';
+import '../../../../auth/presentation/manager/auth_cubit.dart';
+import '../../../../auth/presentation/manager/auth_state.dart' as auth_state;
 
 class AddTaskForm extends StatefulWidget {
   const AddTaskForm({super.key});
@@ -21,7 +23,7 @@ class _AddTaskFormState extends State<AddTaskForm> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
   late TextEditingController _dateController;
-  String _priority = 'medium';
+  String _priority = 'Medium';
 
   @override
   void initState() {
@@ -38,10 +40,14 @@ class _AddTaskFormState extends State<AddTaskForm> {
   }
 
   void _submit() {
-    if (_titleController.text.trim().isEmpty) return;
+    final authState = context.read<AuthCubit>().state;
+    int actualUserId = 0;
+    if (authState is auth_state.AuthSuccess) {
+      actualUserId = authState.user.id ?? 0;
+    }
 
     final newTask = TaskModel(
-      userId: 1, // Assume handled internally
+      userId: actualUserId,
       title: _titleController.text.trim(),
       description: _descController.text.trim(),
       dueDate: _dateController.text,
@@ -175,9 +181,9 @@ class _AddTaskFormState extends State<AddTaskForm> {
       decoration: BoxDecoration(color: AppColors.surfaceContainerHigh.withOpacity(0.5), borderRadius: BorderRadius.circular(999)),
       child: Row(
         children: [
-          _buildPriorityOption('low', 'Low'),
-          _buildPriorityOption('medium', 'Med'),
-          _buildPriorityOption('high', 'High'),
+          _buildPriorityOption('Low', 'Low'),
+          _buildPriorityOption('Medium', 'Med'),
+          _buildPriorityOption('High', 'High'),
         ],
       ),
     );

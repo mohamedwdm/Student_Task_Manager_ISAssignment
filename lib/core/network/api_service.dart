@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:injectable/injectable.dart';
 
 @injectable
@@ -108,7 +109,17 @@ class ApiService {
         'Accept': 'application/json',
         'User-Agent': 'Flutter-Student-Task-Manager',
       });
-      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      
+      // Determine content type based on extension
+      String extension = filePath.split('.').last.toLowerCase();
+      String type = 'image';
+      String subtype = (extension == 'png') ? 'png' : 'jpeg';
+
+      request.files.add(await http.MultipartFile.fromPath(
+        'file', 
+        filePath,
+        contentType: MediaType(type, subtype),
+      ));
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
       return _handleResponse(response);

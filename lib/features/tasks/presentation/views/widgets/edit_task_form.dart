@@ -32,7 +32,11 @@ class _EditTaskFormState extends State<EditTaskForm> {
       text: widget.taskToEdit.description ?? '',
     );
     _dateController = TextEditingController(text: widget.taskToEdit.dueDate);
-    _priority = widget.taskToEdit.priority.toLowerCase();
+    _priority = widget.taskToEdit.priority;
+    // Normalize if needed, but we expect capitalized now
+    if (_priority.toLowerCase() == 'low') _priority = 'Low';
+    if (_priority.toLowerCase() == 'medium') _priority = 'Medium';
+    if (_priority.toLowerCase() == 'high') _priority = 'High';
   }
 
   @override
@@ -204,9 +208,9 @@ class _EditTaskFormState extends State<EditTaskForm> {
       ),
       child: Row(
         children: [
-          _buildPriorityOption('low', 'Low'),
-          _buildPriorityOption('medium', 'Med'),
-          _buildPriorityOption('high', 'High'),
+          _buildPriorityOption('Low', 'Low'),
+          _buildPriorityOption('Medium', 'Med'),
+          _buildPriorityOption('High', 'High'),
         ],
       ),
     );

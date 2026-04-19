@@ -2,6 +2,7 @@ import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'dart:io';
 
 import 'auth_repo.dart';
 import '../models/user_model.dart';
@@ -137,7 +138,55 @@ class AuthRepoImpl implements AuthRepo {
   @override
   Future<UserModel> updateUser(UserModel user) async {
     if (user.id == null) throw Exception('User ID is null');
+
+    // 1. Instantly update local SQL
     await userDao.updateUser(user.id!, user.toMap());
+
+    // 2. Start remote sync in background
+    _syncUpdateToRemote(user).catchError((e) {
+      print('DEBUG SYNC ERROR: Background profile sync failed: $e');
+    });
+
     return user;
+  }
+
+  Future<void> _syncUpdateToRemote(UserModel user) async {
+    try {
+      // A. Check for Photo Upload
+      if (user.profilePhoto != null &&
+          user.profilePhoto!.isNotEmpty &&
+          !user.profilePhoto!.startsWith('http')) {
+        final file = File(user.profilePhoto!);
+        if (await file.exists()) {
+          print('DEBUG SYNC: Detected new local photo, starting upload for User ${user.id}...');
+          final uploadResponse = await profileRemoteDataSource.uploadPhoto(user.id!, user.profilePhoto!);
+          print('DEBUG SYNC: Photo upload complete: $uploadResponse');
+
+          // If server returned a public URL, update local DB with it
+          if (uploadResponse.containsKey('profile_photo')) {
+            final publicUrl = uploadResponse['profile_photo'];
+            final updatedWithUrl = UserModel(
+              id: user.id,
+              fullName: user.fullName,
+              gender: user.gender,
+              email: user.email,
+              studentId: user.studentId,
+              academicLevel: user.academicLevel,
+              password: user.password,
+              profilePhoto: publicUrl,
+            );
+            await userDao.updateUser(user.id!, updatedWithUrl.toMap());
+            print('DEBUG SYNC: Local profile updated with remote URL: $publicUrl');
+          }
+        }
+      }
+
+      // B. Update Profile Text Data
+      print('DEBUG SYNC: Attempting Profile Data Sync for User ${user.id}...');
+      final response = await profileRemoteDataSource.updateProfile(user.id!, user);
+      print('DEBUG SYNC: Profile data sync response: $response');
+    } catch (e) {
+      rethrow;
+    }
   }
 }
