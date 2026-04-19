@@ -249,14 +249,16 @@ class _TasksViewBodyState extends State<TasksViewBody> {
 
                       if (tasks.isEmpty) {
                         return SliverFillRemaining(
+                          hasScrollBody: false,
                           child: Center(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24.0,
+                                vertical: 24.0,
                               ),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 80,
+                                  vertical: 48,
                                   horizontal: 24,
                                 ),
                                 decoration: BoxDecoration(
@@ -268,47 +270,49 @@ class _TasksViewBodyState extends State<TasksViewBody> {
                                     style: BorderStyle.none,
                                   ),
                                 ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 128,
-                                      height: 128,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: AppColors.surfaceContainerHigh,
-                                      ),
-                                      child: Center(
-                                        child: Icon(
-                                          Icons.auto_stories,
-                                          size: 48,
-                                          color: AppColors.primary.withOpacity(
-                                            0.4,
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 128,
+                                        height: 128,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: AppColors.surfaceContainerHigh,
+                                        ),
+                                        child: Center(
+                                          child: Icon(
+                                            Icons.auto_stories,
+                                            size: 48,
+                                            color: AppColors.primary.withOpacity(
+                                              0.4,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 32),
-                                    const Text(
-                                      'No Active Inquiries',
-                                      style: TextStyle(
-                                        fontFamily: 'Plus Jakarta Sans',
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.onSurface,
+                                      const SizedBox(height: 32),
+                                      const Text(
+                                        'No Active Inquiries',
+                                        style: TextStyle(
+                                          fontFamily: 'Plus Jakarta Sans',
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.onSurface,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    const Text(
-                                      'Your curriculum is clear. Use the "Add" button below to curate your next academic milestone.',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontFamily: 'Inter',
-                                        fontSize: 16,
-                                        color: AppColors.onSurfaceVariant,
+                                      const SizedBox(height: 8),
+                                      const Text(
+                                        'Your curriculum is clear. Use the "Add" button below to curate your next academic milestone.',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontFamily: 'Inter',
+                                          fontSize: 16,
+                                          color: AppColors.onSurfaceVariant,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),

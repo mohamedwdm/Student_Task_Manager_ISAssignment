@@ -4,61 +4,136 @@ import 'package:injectable/injectable.dart';
 
 @injectable
 class ApiService {
-  final String baseUrl = 'http://10.0.2.2:8000/api';
+  final String baseUrl = 'https://mobileassignment1-production.up.railway.app';
   final http.Client client;
 
   ApiService(this.client);
 
   Future<dynamic> get(String endpoint) async {
     try {
-      final response = await client.get(Uri.parse('$baseUrl$endpoint'));
+      print('DEBUG API: GET $baseUrl$endpoint');
+      final response = await client.get(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Flutter-Student-Task-Manager',
+        },
+      ).timeout(const Duration(seconds: 15));
       return _handleResponse(response);
     } catch (e) {
+      print('DEBUG API ERROR: $e');
       throw Exception('Network error: $e');
     }
   }
 
   Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
     try {
+      print('DEBUG API: POST $baseUrl$endpoint - Body: $data');
       final response = await client.post(
         Uri.parse('$baseUrl$endpoint'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'Flutter-Student-Task-Manager',
+        },
         body: json.encode(data),
-      );
+      ).timeout(const Duration(seconds: 15));
       return _handleResponse(response);
     } catch (e) {
+      print('DEBUG API ERROR: $e');
       throw Exception('Network error: $e');
     }
   }
 
   Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
     try {
+      print('DEBUG API: PUT $baseUrl$endpoint');
       final response = await client.put(
         Uri.parse('$baseUrl$endpoint'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'Flutter-Student-Task-Manager',
+        },
         body: json.encode(data),
-      );
+      ).timeout(const Duration(seconds: 15));
       return _handleResponse(response);
     } catch (e) {
+      print('DEBUG API ERROR: $e');
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<dynamic> patch(String endpoint, Map<String, dynamic>? data) async {
+    try {
+      print('DEBUG API: PATCH $baseUrl$endpoint');
+      final response = await client.patch(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'Flutter-Student-Task-Manager',
+        },
+        body: data != null ? json.encode(data) : null,
+      ).timeout(const Duration(seconds: 15));
+      return _handleResponse(response);
+    } catch (e) {
+      print('DEBUG API ERROR: $e');
       throw Exception('Network error: $e');
     }
   }
 
   Future<dynamic> delete(String endpoint) async {
     try {
-      final response = await client.delete(Uri.parse('$baseUrl$endpoint'));
+      print('DEBUG API: DELETE $baseUrl$endpoint');
+      final response = await client.delete(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Flutter-Student-Task-Manager',
+        },
+      ).timeout(const Duration(seconds: 15));
       return _handleResponse(response);
     } catch (e) {
+      print('DEBUG API ERROR: $e');
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<dynamic> postMultipart(String endpoint, String filePath) async {
+    try {
+      print('DEBUG API: MULTIPART POST $baseUrl$endpoint');
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint'));
+      request.headers.addAll({
+        'Accept': 'application/json',
+        'User-Agent': 'Flutter-Student-Task-Manager',
+      });
+      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      return _handleResponse(response);
+    } catch (e) {
+      print('DEBUG API ERROR: $e');
       throw Exception('Network error: $e');
     }
   }
 
   dynamic _handleResponse(http.Response response) {
+    print('DEBUG API RESPONSE: ${response.statusCode} - ${response.body}');
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isEmpty) return null;
       return json.decode(response.body);
     } else {
-      throw Exception('API error: ${response.statusCode} - ${response.body}');
+      String message = 'API error: ${response.statusCode}';
+      try {
+        final errorData = json.decode(response.body);
+        if (errorData is Map && errorData.containsKey('detail')) {
+          message = errorData['detail'];
+        }
+      } catch (_) {
+        message += ' - ${response.body}';
+      }
+      throw Exception(message);
     }
   }
 }

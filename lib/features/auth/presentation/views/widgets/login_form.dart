@@ -40,7 +40,20 @@ class _LoginFormState extends State<LoginForm> {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login Success'),
+              backgroundColor: Colors.green,
+            ),
+          );
           context.go('/tasks');
+        } else if (state is AuthFailure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Login Failed: ${state.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       },
       builder: (context, state) {

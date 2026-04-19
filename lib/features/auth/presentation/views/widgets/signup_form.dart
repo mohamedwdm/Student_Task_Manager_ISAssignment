@@ -17,13 +17,15 @@ class SignupForm extends StatefulWidget {
 }
 
 class _SignupFormState extends State<SignupForm> {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _studentIdController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  
   String _selectedGender = 'Male';
-  int _selectedLevel = 3;
+  int? _selectedLevel;
 
   @override
   void dispose() {
@@ -36,12 +38,18 @@ class _SignupFormState extends State<SignupForm> {
   }
 
   void _signup() {
-    if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+    // 8. SUBMISSION LOGIC
+    if (!_formKey.currentState!.validate()) {
+      // IF form is NOT valid -> Show SnackBar "Signup Failed"
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Signup Failed'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
+
     final user = UserModel(
       fullName: _nameController.text.trim(),
       email: _emailController.text.trim(),
@@ -63,150 +71,206 @@ class _SignupFormState extends State<SignupForm> {
           );
           context.go('/login');
         } else if (state is AuthFailure) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+          );
         }
       },
       builder: (context, state) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Create your account', style: AppTextStyles.heading3),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Please enter your academic credentials',
-              style: AppTextStyles.bodyMedium,
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-
-            _buildLabel('FULL NAME'),
-            _buildTextField(
-              controller: _nameController,
-              hintText: 'John Doe',
-              icon: Icons.person_outline,
-            ),
-            const SizedBox(height: 20),
-
-            _buildLabel('GENDER'),
-            Row(
-              children: [
-                Expanded(child: _buildGenderRadio('Male', Icons.male)),
-                const SizedBox(width: 16),
-                Expanded(child: _buildGenderRadio('Female', Icons.female)),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-            _buildLabel('UNIVERSITY EMAIL'),
-            _buildTextField(
-              controller: _emailController,
-              hintText: '20210000@stud.fci-cu.edu.eg',
-              icon: Icons.alternate_email,
-            ),
-            const SizedBox(height: 20),
-            _buildLabel('STUDENT ID'),
-            _buildTextField(
-              controller: _studentIdController,
-              hintText: '20210000',
-              icon: Icons.badge_outlined,
-            ),
-
-            const SizedBox(height: 20),
-            _buildLabel('ACADEMIC LEVEL'),
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(12),
+        return Form(
+          key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Create your account', style: AppTextStyles.heading3),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Please enter your academic credentials',
+                style: AppTextStyles.bodyMedium,
               ),
-              child: DropdownButtonFormField<int>(
-                value: _selectedLevel,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  prefixIcon: Icon(
-                    Icons.school_outlined,
-                    color: AppColors.outline,
-                  ),
+              const SizedBox(height: AppSpacing.xxl),
+
+              // 1. FULL NAME
+              _buildLabel('Full Name *'),
+              TextFormField(
+                controller: _nameController,
+                style: const TextStyle(fontFamily: 'Inter'),
+                decoration: _buildInputDecoration(
+                  hintText: 'John Doe',
+                  icon: Icons.person_outline,
                 ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 1,
-                    child: Text(
-                      'Level 1',
-                      style: TextStyle(fontFamily: 'Inter'),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Full name is required';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // 2. GENDER
+              _buildLabel('Gender'),
+              Row(
+                children: [
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: const Text('Male', style: TextStyle(fontSize: 14)),
+                      value: 'Male',
+                      groupValue: _selectedGender,
+                      contentPadding: EdgeInsets.zero,
+                      onChanged: (val) => setState(() => _selectedGender = val!),
                     ),
                   ),
-                  DropdownMenuItem(
-                    value: 2,
-                    child: Text(
-                      'Level 2',
-                      style: TextStyle(fontFamily: 'Inter'),
-                    ),
-                  ),
-                  DropdownMenuItem(
-                    value: 3,
-                    child: Text(
-                      'Level 3',
-                      style: TextStyle(fontFamily: 'Inter'),
-                    ),
-                  ),
-                  DropdownMenuItem(
-                    value: 4,
-                    child: Text(
-                      'Level 4',
-                      style: TextStyle(fontFamily: 'Inter'),
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: const Text('Female', style: TextStyle(fontSize: 14)),
+                      value: 'Female',
+                      groupValue: _selectedGender,
+                      contentPadding: EdgeInsets.zero,
+                      onChanged: (val) => setState(() => _selectedGender = val!),
                     ),
                   ),
                 ],
-                onChanged: (val) {
-                  if (val != null) setState(() => _selectedLevel = val);
+              ),
+              const SizedBox(height: 10),
+
+              // 3. UNIVERSITY EMAIL
+              _buildLabel('University Email *'),
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(fontFamily: 'Inter'),
+                decoration: _buildInputDecoration(
+                  hintText: '20210000@stud.fci-cu.edu.eg',
+                  icon: Icons.alternate_email,
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Email is required';
+                  }
+                  final regex = RegExp(r'^\d+@stud\.fci-cu\.edu\.eg$');
+                  if (!regex.hasMatch(value)) {
+                    return 'Enter a valid FCI email';
+                  }
+                  return null;
                 },
               ),
-            ),
-            const SizedBox(height: 20),
-            _buildLabel('PASSWORD'),
-            _buildTextField(
-              controller: _passwordController,
-              hintText: '••••••••',
-              icon: Icons.lock_outline,
-              isPassword: true,
-            ),
-            const SizedBox(height: 20),
-            _buildLabel('CONFIRM PASSWORD'),
-            _buildTextField(
-              controller: _confirmPasswordController,
-              hintText: '••••••••',
-              icon: Icons.lock_clock_outlined,
-              isPassword: true,
-            ),
+              const SizedBox(height: 20),
 
-            const SizedBox(height: 32),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
+              // 4. STUDENT ID
+              _buildLabel('Student ID *'),
+              TextFormField(
+                controller: _studentIdController,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(fontFamily: 'Inter'),
+                decoration: _buildInputDecoration(
+                  hintText: '20210000',
+                  icon: Icons.badge_outlined,
                 ),
-                elevation: 8,
-                shadowColor: AppColors.primary.withOpacity(0.5),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Student ID is required';
+                  }
+                  if (!RegExp(r'^\d+$').hasMatch(value)) {
+                    return 'Student ID must be numbers only';
+                  }
+                  // 5. EMAIL + STUDENT ID MATCHING
+                  final emailValue = _emailController.text;
+                  if (emailValue.isNotEmpty) {
+                    final emailPrefix = emailValue.split('@').first;
+                    if (value != emailPrefix) {
+                      return 'Student ID must match the ID in email';
+                    }
+                  }
+                  return null;
+                },
               ),
-              onPressed: state is AuthLoading ? null : _signup,
-              child:
-                  state is AuthLoading
-                      ? const SizedBox(
+              const SizedBox(height: 20),
+
+              // 6. ACADEMIC LEVEL
+              _buildLabel('Academic Level'),
+              DropdownButtonFormField<int>(
+                value: _selectedLevel,
+                onChanged: (val) => setState(() => _selectedLevel = val),
+                style: const TextStyle(fontFamily: 'Inter', color: AppColors.onSurface),
+                decoration: _buildInputDecoration(
+                  hintText: 'Select Level',
+                  icon: Icons.school_outlined,
+                ),
+                items: [1, 2, 3, 4].map((level) {
+                  return DropdownMenuItem(
+                    value: level,
+                    child: Text('Level $level'),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+
+              // 7. PASSWORD
+              _buildLabel('Password *'),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                style: const TextStyle(fontFamily: 'Inter'),
+                decoration: _buildInputDecoration(
+                  hintText: '••••••••',
+                  icon: Icons.lock_outline,
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Password is required';
+                  }
+                  final regex = RegExp(r'^(?=.*\d).{8,}$');
+                  if (!regex.hasMatch(value)) {
+                    return 'Password must be at least 8 characters and contain a number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // 8. CONFIRM PASSWORD
+              _buildLabel('Confirm Password *'),
+              TextFormField(
+                controller: _confirmPasswordController,
+                obscureText: true,
+                style: const TextStyle(fontFamily: 'Inter'),
+                decoration: _buildInputDecoration(
+                  hintText: '••••••••',
+                  icon: Icons.lock_clock_outlined,
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Passwords do not match';
+                  }
+                  if (value != _passwordController.text) {
+                    return 'Passwords do not match';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 32),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  elevation: 8,
+                  shadowColor: AppColors.primary.withOpacity(0.5),
+                ),
+                onPressed: state is AuthLoading ? null : _signup,
+                child: state is AuthLoading
+                    ? const SizedBox(
                         width: 24,
                         height: 24,
-                        child: CircularProgressIndicator(
-                          color: AppColors.onPrimary,
-                        ),
+                        child: CircularProgressIndicator(color: AppColors.onPrimary),
                       )
-                      : Row(
+                    : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
@@ -217,115 +281,104 @@ class _SignupFormState extends State<SignupForm> {
                             ),
                           ),
                           const SizedBox(width: AppSpacing.s),
-                          Icon(Icons.arrow_forward),
+                          const Icon(Icons.arrow_forward),
                         ],
                       ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Already have an account?',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14,
-                    color: AppColors.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => context.go('/login'),
-                  child: const Text(
-                    'Sign In',
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Already have an account?',
                     style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 14,
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  TextButton(
+                    onPressed: () => context.go('/login'),
+                    child: const Text(
+                      'Sign In',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
   }
 
   Widget _buildLabel(String text) {
+    // 🎯 GLOBAL UI REQUIREMENTS: Mandatory fields show red asterisk
+    final bool isMandatory = text.contains('*');
+    if (!isMandatory) {
+      return Padding(
+        padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.s),
+        child: Text(text, style: AppTextStyles.labelSmall),
+      );
+    }
+
+    final String cleanText = text.replaceFirst('*', '').trim();
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.s),
-      child: Text(text, style: AppTextStyles.labelSmall),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    required IconData icon,
-    bool isPassword = false,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: isPassword,
-        style: const TextStyle(fontFamily: 'Inter', color: AppColors.onSurface),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(color: AppColors.outline.withOpacity(0.6)),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-          prefixIcon: Icon(icon, color: AppColors.outline),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGenderRadio(String title, IconData icon) {
-    final isSelected = _selectedGender == title;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedGender = title),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? AppColors.primaryFixed
-                  : AppColors.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.transparent,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.primary : AppColors.outline,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color:
-                    isSelected ? AppColors.primary : AppColors.onSurfaceVariant,
-              ),
+      child: RichText(
+        text: TextSpan(
+          text: cleanText,
+          style: AppTextStyles.labelSmall,
+          children: const [
+            TextSpan(
+              text: ' *',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  InputDecoration _buildInputDecoration({
+    required String hintText,
+    required IconData icon,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: TextStyle(color: AppColors.outline.withOpacity(0.6)),
+      filled: true,
+      fillColor: AppColors.surfaceContainerLow,
+      prefixIcon: Icon(icon, color: AppColors.outline),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      errorStyle: const TextStyle(color: Colors.red),
+      // Validation Error UI requirements
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
       ),
     );
   }

@@ -14,14 +14,32 @@ class TaskRemoteDataSource {
   }
 
   Future<dynamic> addRemoteTask(TaskModel task) async {
-    return await apiService.post('/tasks', task.toJson());
+    return await apiService.post('/tasks', {
+      'title': task.title,
+      'description': task.description,
+      'due_date': task.dueDate,
+      'priority': task.priority,
+      'user_id': task.userId,
+    });
   }
 
   Future<dynamic> updateRemoteTask(int taskId, TaskModel task) async {
-    return await apiService.put('/tasks/$taskId', task.toJson());
+    return await apiService.put('/tasks/$taskId', {
+      'title': task.title,
+      'description': task.description,
+      'due_date': task.dueDate,
+      'priority': task.priority,
+      'user_id': task.userId,
+    });
   }
 
   Future<dynamic> deleteRemoteTask(int taskId) async {
     return await apiService.delete('/tasks/$taskId');
+  }
+
+  Future<dynamic> toggleCompleteRemote(int taskId, bool isCompleted) async {
+    return await apiService.patch('/tasks/$taskId/complete', {
+      'is_completed': isCompleted,
+    });
   }
 }

@@ -104,6 +104,21 @@ class TaskRepoImpl implements TaskRepo {
       priority: task.priority,
       isCompleted: !task.isCompleted,
     );
-    await updateTask(updatedTask);
+    
+    // 1. Instantly update local SQL
+    if (updatedTask.id != null) {
+      await taskDao.updateTask(updatedTask.id!, updatedTask.toMap());
+    }
+
+    // 2. Fire and forget remote action (using specific PATCH endpoint)
+    if (updatedTask.id != null) {
+      _toggleCompleteRemoteBackground(updatedTask.id!, updatedTask.isCompleted).ignore();
+    }
+  }
+
+  Future<void> _toggleCompleteRemoteBackground(int id, bool isCompleted) async {
+    try {
+      await remoteDataSource.toggleCompleteRemote(id, isCompleted);
+    } catch (e) {}
   }
 }
