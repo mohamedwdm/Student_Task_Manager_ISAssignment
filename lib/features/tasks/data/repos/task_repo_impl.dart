@@ -5,12 +5,15 @@ import '../models/task_model.dart';
 import '../../../../core/database/task_dao.dart';
 import '../datasources/task_remote_data_source.dart';
 
+import '../services/sync_service.dart';
+
 @Injectable(as: TaskRepo)
 class TaskRepoImpl implements TaskRepo {
   final TaskDao taskDao;
   final TaskRemoteDataSource remoteDataSource;
+  final SyncService syncService;
 
-  TaskRepoImpl(this.taskDao, this.remoteDataSource);
+  TaskRepoImpl(this.taskDao, this.remoteDataSource, this.syncService);
 
   @override
   Future<List<TaskModel>> getTasks(int userId, {bool forceRefresh = false}) async {
@@ -27,6 +30,7 @@ class TaskRepoImpl implements TaskRepo {
 
     // 3. Normal load: return local instantly and sync in background
     _syncTasksFromRemote(userId).ignore();
+    syncService.syncPendingTasks().ignore(); // Also check for any old pending tasks
     return localData.map((e) => TaskModel.fromMap(e)).toList();
   }
 
@@ -42,80 +46,48 @@ class TaskRepoImpl implements TaskRepo {
 
   @override
   Future<TaskModel> addTask(TaskModel task) async {
-    // 1. Instantly save to local DB (using temporary SQLite ID)
-    final localId = await taskDao.insertTask(task.toMap());
-    final taskWithLocalId = TaskModel(
-      id: localId,
-      userId: task.userId,
-      title: task.title,
-      description: task.description,
-      dueDate: task.dueDate,
-      priority: task.priority,
-      isCompleted: task.isCompleted,
+    // 1. Instantly save to local DB with 'create' action
+    final taskToQueue = task.copyWith(
+      isSynced: false,
+      syncAction: 'create',
     );
     
-    // 2. Sync to remote immediately
-    try {
-      final remoteResponse = await remoteDataSource.addRemoteTask(taskWithLocalId);
-      print('DEBUG: SERVER TASK RESPONSE: $remoteResponse');
-      
-      final dynamic serverIdRaw = remoteResponse['id'];
-      int? serverId;
-      if (serverIdRaw is int) serverId = serverIdRaw;
-      if (serverIdRaw is String) serverId = int.tryParse(serverIdRaw);
-      
-      if (serverId != null) {
-        print('DEBUG SYNC: Local ID $localId successfully mapped to Server ID $serverId');
-        // 3. Delete the temporary local record and insert the correct server record
-        await taskDao.deleteTask(localId);
-        final taskWithServerId = TaskModel(
-          id: serverId,
-          userId: task.userId,
-          title: task.title,
-          description: task.description,
-          dueDate: task.dueDate,
-          priority: task.priority,
-          isCompleted: task.isCompleted,
-        );
-        await taskDao.insertTask(taskWithServerId.toMap());
-        return taskWithServerId;
-      }
-    } catch (e) {
-      print('DEBUG SYNC ERROR: Failed to add task to remote: $e');
-      // We still return the local task so the user can keep working offline
-    }
+    final localId = await taskDao.insertTask(taskToQueue.toMap());
+    final taskWithLocalId = taskToQueue.copyWith(id: localId);
+    
+    // 2. Trigger background sync
+    syncService.syncPendingTasks().ignore();
 
     return taskWithLocalId;
   }
+
 
   @override
   Future<void> updateTask(TaskModel task) async {
     if (task.id == null) return;
     
-    // 1. Instantly update local SQL
-    await taskDao.updateTask(task.id!, task.toMap());
+    // 1. Instantly update local SQL with 'update' action
+    final taskToQueue = task.copyWith(
+      isSynced: false,
+      syncAction: 'update',
+    );
+    await taskDao.updateTask(task.id!, taskToQueue.toMap());
 
-    // 2. Remote action
-    try {
-      print('DEBUG SYNC: Attempting UPDATE on Server ID ${task.id} for User ${task.userId}');
-      await remoteDataSource.updateRemoteTask(task.id!, task);
-    } catch (e) {
-      print('DEBUG SYNC ERROR: Failed to update task on remote: $e');
-    }
+    // 2. Trigger background sync
+    syncService.syncPendingTasks().ignore();
   }
 
   @override
   Future<void> deleteTask(int taskId) async {
-    // 1. Instantly delete from local SQL
-    await taskDao.deleteTask(taskId);
+    // 1. Mark for deletion in local SQL (Offline First)
+    // We don't remove it yet so we have the record to sync the DELETE call
+    await taskDao.updateTask(taskId, {
+      'is_synced': 0,
+      'sync_action': 'delete',
+    });
 
-    // 2. Remote action
-    try {
-      print('DEBUG SYNC: Attempting DELETE on Server ID $taskId');
-      await remoteDataSource.deleteRemoteTask(taskId);
-    } catch (e) {
-      print('DEBUG SYNC ERROR: Failed to delete task on remote: $e');
-    }
+    // 2. Trigger background sync
+    syncService.syncPendingTasks().ignore();
   }
 
   @override
@@ -123,25 +95,16 @@ class TaskRepoImpl implements TaskRepo {
     if (task.id == null) return;
 
     final isCompleted = !task.isCompleted;
-    final updatedTask = TaskModel(
-      id: task.id,
-      userId: task.userId,
-      title: task.title,
-      description: task.description,
-      dueDate: task.dueDate,
-      priority: task.priority,
+    final updatedTask = task.copyWith(
       isCompleted: isCompleted,
+      isSynced: false,
+      syncAction: 'update',
     );
     
     // 1. Instantly update local SQL
     await taskDao.updateTask(task.id!, updatedTask.toMap());
 
-    // 2. Remote action (using specific PATCH endpoint)
-    try {
-      print('DEBUG SYNC: Attempting TOGGLE on Server ID ${task.id} to $isCompleted');
-      await remoteDataSource.toggleCompleteRemote(task.id!, isCompleted);
-    } catch (e) {
-      print('DEBUG SYNC ERROR: Failed to toggle completion on remote: $e');
-    }
+    // 2. Trigger background sync
+    syncService.syncPendingTasks().ignore();
   }
 }

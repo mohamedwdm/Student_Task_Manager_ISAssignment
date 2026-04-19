@@ -35,38 +35,64 @@ class AuthRepoImpl implements AuthRepo {
 
   @override
   Future<UserModel> login(String email, String password) async {
-    // 1. Authenticate with remote API
-    final loginResponse = await remoteDataSource.login(email, password);
-    final int? userId = loginResponse['id'] ?? loginResponse['user_id'];
-    
-    if (userId == null) {
-      throw Exception('Login failed: Server did not return a user ID');
+    try {
+      // 1. Authenticate with remote API
+      print('DEBUG AUTH: Attempting remote login for $email...');
+      final loginResponse = await remoteDataSource.login(email, password);
+      final int? userId = loginResponse['id'] ?? loginResponse['user_id'];
+      
+      if (userId == null) {
+        throw Exception('Login failed: Server did not return a user ID');
+      }
+
+      // 2. Clear previous tasks for this user (to prepare for sync)
+      await taskDao.clearAllTasks();
+
+      // 3. Fetch full profile to ensure we have all data (name, student_id, etc.)
+      final fullProfile = await profileRemoteDataSource.getProfile(userId);
+      
+      // 4. Hash password for local storage
+      final hashedPassword = _hashPassword(password);
+      
+      // 5. Cache full user in local database
+      final userToCache = UserModel(
+        id: fullProfile.id,
+        fullName: fullProfile.fullName,
+        gender: fullProfile.gender,
+        email: fullProfile.email,
+        studentId: fullProfile.studentId,
+        academicLevel: fullProfile.academicLevel,
+        password: hashedPassword,
+        profilePhoto: fullProfile.profilePhoto,
+      );
+      
+      await userDao.insertUser(userToCache.toMap());
+
+      // 6. Persistence session
+      await sharedPreferences.setInt('user_id', userId);
+      print('DEBUG AUTH: Remote login success for $email');
+      return userToCache;
+    } catch (e) {
+      print('DEBUG AUTH: Remote login failed: $e. Checking offline fallback...');
+      
+      // 7. Offline Fallback: Check local database for cached credentials
+      final localUserMap = await userDao.getUserByEmail(email);
+      if (localUserMap != null) {
+        final localUser = UserModel.fromMap(localUserMap);
+        final hashedInputPassword = _hashPassword(password);
+        
+        if (localUser.password == hashedInputPassword) {
+          print('DEBUG AUTH: Offline login success for $email');
+          if (localUser.id != null) {
+            await sharedPreferences.setInt('user_id', localUser.id!);
+          }
+          return localUser;
+        }
+      }
+      
+      print('DEBUG AUTH: Offline login failed. Credentials not found or mismatch.');
+      throw Exception('Login failed: $e');
     }
-
-    // 2. Fetch full profile to ensure we have all data (name, student_id, etc.)
-    // This allows us to handle the partial response from /login
-    final fullProfile = await profileRemoteDataSource.getProfile(userId);
-    
-    // 3. Hash password for local storage
-    final hashedPassword = _hashPassword(password);
-    
-    // 4. Cache full user in local database
-    final userToCache = UserModel(
-      id: fullProfile.id,
-      fullName: fullProfile.fullName,
-      gender: fullProfile.gender,
-      email: fullProfile.email,
-      studentId: fullProfile.studentId,
-      academicLevel: fullProfile.academicLevel,
-      password: hashedPassword,
-      profilePhoto: fullProfile.profilePhoto,
-    );
-    
-    await userDao.insertUser(userToCache.toMap());
-
-    // 5. Persistence session
-    await sharedPreferences.setInt('user_id', userId);
-    return userToCache;
   }
 
   @override

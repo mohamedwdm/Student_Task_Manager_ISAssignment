@@ -1,21 +1,37 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 import 'task_state.dart';
 import '../../data/repos/task_repo.dart';
 import '../../data/models/task_model.dart';
+import '../../data/services/sync_service.dart';
 
 @injectable
 class TaskCubit extends Cubit<TaskState> {
   final TaskRepo taskRepo;
+  final SyncService syncService;
+  StreamSubscription? _syncSubscription;
   int? _currentUserId;
   String _currentFilter = 'All';
 
-  TaskCubit(this.taskRepo) : super(TaskInitial());
+  TaskCubit(this.taskRepo, this.syncService) : super(TaskInitial()) {
+    _syncSubscription = syncService.onSyncComplete.listen((_) {
+      print('DEBUG CUBIT: Sync complete notification received. Refreshing UI...');
+      fetchTasks();
+    });
+  }
 
   void init(int userId) {
     _currentUserId = userId;
+    syncService.syncPendingTasks().ignore(); // Push pending tasks on startup
     fetchTasks();
+  }
+
+  @override
+  Future<void> close() {
+    _syncSubscription?.cancel();
+    return super.close();
   }
 
   Future<void> fetchTasks({bool forceRefresh = false}) async {
@@ -93,14 +109,10 @@ class TaskCubit extends Cubit<TaskState> {
         if (index != -1) {
           final updatedList = List<TaskModel>.from(currentTasks);
           final oldTask = updatedList[index];
-          updatedList[index] = TaskModel(
-            id: oldTask.id,
-            userId: oldTask.userId,
-            title: oldTask.title,
-            description: oldTask.description,
-            dueDate: oldTask.dueDate,
-            priority: oldTask.priority,
+          updatedList[index] = oldTask.copyWith(
             isCompleted: !oldTask.isCompleted,
+            isSynced: false,
+            syncAction: 'update',
           );
           _emitLoaded(updatedList);
         }

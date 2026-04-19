@@ -21,9 +21,18 @@ class TaskDao {
     final db = await dbHelper.database;
     return await db.query(
       'tasks',
-      where: 'user_id = ?',
-      whereArgs: [userId],
+      where: 'user_id = ? AND (sync_action IS NULL OR sync_action != ?)',
+      whereArgs: [userId, 'delete'],
       orderBy: 'due_date ASC',
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getUnsyncedTasks() async {
+    final db = await dbHelper.database;
+    return await db.query(
+      'tasks',
+      where: 'is_synced = ?',
+      whereArgs: [0],
     );
   }
 
@@ -62,6 +71,7 @@ class TaskDao {
           'due_date': r['due_date'] as String,
           'priority': r['priority'] as String,
           'is_completed': completedInt,
+          'is_synced': 1,
         };
         await txn.insert(
           'tasks',

@@ -29,6 +29,7 @@ import '../../features/tasks/data/datasources/task_remote_data_source.dart'
     as _i864;
 import '../../features/tasks/data/repos/task_repo.dart' as _i712;
 import '../../features/tasks/data/repos/task_repo_impl.dart' as _i1033;
+import '../../features/tasks/data/services/sync_service.dart' as _i267;
 import '../../features/tasks/presentation/manager/task_cubit.dart' as _i121;
 import '../database/db_helper.dart' as _i880;
 import '../database/task_dao.dart' as _i695;
@@ -64,11 +65,18 @@ _i174.GetIt init(
       gh<_i695.TaskDao>(),
     ),
   );
+  gh.lazySingleton<_i267.SyncService>(
+    () => _i267.SyncService(
+      gh<_i695.TaskDao>(),
+      gh<_i864.TaskRemoteDataSource>(),
+    ),
+  );
   gh.factory<_i888.AuthCubit>(() => _i888.AuthCubit(gh<_i507.AuthRepo>()));
   gh.factory<_i712.TaskRepo>(
     () => _i1033.TaskRepoImpl(
       gh<_i695.TaskDao>(),
       gh<_i864.TaskRemoteDataSource>(),
+      gh<_i267.SyncService>(),
     ),
   );
   gh.factory<_i687.ProfileRepo>(
@@ -77,7 +85,9 @@ _i174.GetIt init(
       gh<_i847.ProfileRemoteDataSource>(),
     ),
   );
-  gh.factory<_i121.TaskCubit>(() => _i121.TaskCubit(gh<_i712.TaskRepo>()));
+  gh.factory<_i121.TaskCubit>(
+    () => _i121.TaskCubit(gh<_i712.TaskRepo>(), gh<_i267.SyncService>()),
+  );
   gh.factory<_i735.ProfileCubit>(
     () => _i735.ProfileCubit(gh<_i687.ProfileRepo>(), gh<_i507.AuthRepo>()),
   );
