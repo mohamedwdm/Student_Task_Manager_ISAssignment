@@ -42,17 +42,41 @@ class AppAvatar extends StatelessWidget {
         return Container(
           width: radius * 2,
           height: radius * 2,
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: AppColors.surfaceContainerHigh,
             border: Border.all(color: borderColor, width: borderWidth),
-            image: DecorationImage(
-              image: avatarImage,
-              fit: BoxFit.cover,
-            ),
           ),
+          child: _buildImage(avatarImage),
         );
       },
+    );
+  }
+
+  Widget _buildImage(ImageProvider provider) {
+    if (provider is NetworkImage) {
+      return Image(
+        image: provider,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return const Center(
+            child: Icon(
+              Icons.person,
+              color: AppColors.outline,
+            ),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+        },
+      );
+    }
+    
+    return Image(
+      image: provider,
+      fit: BoxFit.cover,
     );
   }
 }

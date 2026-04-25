@@ -9,6 +9,8 @@ import '../../features/tasks/presentation/views/add_task_view.dart';
 import '../../features/tasks/presentation/views/edit_task_view.dart';
 import '../../features/tasks/data/models/task_model.dart';
 import '../../features/auth/presentation/views/splash_view.dart';
+import '../../features/tasks/presentation/views/favorite_tasks_view.dart';
+import '../../features/tasks/presentation/views/deadline_view.dart';
 
 class AppRouter {
   static final router = GoRouter(
@@ -32,6 +34,14 @@ class AppRouter {
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileView(),
+      ),
+      GoRoute(
+        path: '/favorites',
+        builder: (context, state) => const FavoriteTasksView(),
+      ),
+      GoRoute(
+        path: '/deadline',
+        builder: (context, state) => const DeadlineView(),
       ),
     ],
   );

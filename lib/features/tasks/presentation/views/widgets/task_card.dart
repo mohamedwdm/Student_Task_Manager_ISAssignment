@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:student_task_manager/core/theme/colors.dart';
+import 'package:student_task_manager/features/tasks/presentation/manager/favorite_cubit.dart';
+import 'package:student_task_manager/features/tasks/presentation/manager/favorite_state.dart';
 import '../../../../../core/widgets/app_card.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../core/theme/text_styles.dart';
 import '../../../data/models/task_model.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class TaskCard extends StatelessWidget {
   final TaskModel task;
@@ -57,8 +60,9 @@ class TaskCard extends StatelessWidget {
       parsedDate = DateTime.parse(task.dueDate);
     } catch (_) {}
 
-    final dateDisplay =
-        parsedDate != null ? dateFormat.format(parsedDate) : task.dueDate;
+    final dateDisplay = parsedDate != null
+        ? dateFormat.format(parsedDate)
+        : task.dueDate;
 
     return AppCard(
       backgroundColor: task.isCompleted
@@ -105,6 +109,27 @@ class TaskCard extends StatelessWidget {
                       splashRadius: 20,
                     ),
                   const SizedBox(width: 8),
+                  BlocBuilder<FavoriteCubit, FavoriteState>(
+                    builder: (context, state) {
+                      final isFav = context.read<FavoriteCubit>().isFavorite(
+                        task.id ?? -1,
+                      );
+                      return IconButton(
+                        icon: Icon(
+                          isFav ? Icons.favorite : Icons.favorite_border,
+                          size: 18,
+                          color: isFav ? AppColors.error : AppColors.primary,
+                        ),
+                        onPressed: () => context
+                            .read<FavoriteCubit>()
+                            .toggleFavorite(task.id ?? -1),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        splashRadius: 20,
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
                   IconButton(
                     icon: const Icon(
                       Icons.delete,
@@ -146,14 +171,12 @@ class TaskCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.titleMedium.copyWith(
-                        decoration:
-                            task.isCompleted
-                                ? TextDecoration.lineThrough
-                                : null,
-                        color:
-                            task.isCompleted
-                                ? AppColors.onSurface.withOpacity(0.6)
-                                : AppColors.onSurface,
+                        decoration: task.isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
+                        color: task.isCompleted
+                            ? AppColors.onSurface.withOpacity(0.6)
+                            : AppColors.onSurface,
                       ),
                     ),
                     if (task.description != null &&
@@ -164,14 +187,12 @@ class TaskCard extends StatelessWidget {
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color:
-                              task.isCompleted
-                                  ? AppColors.onSurfaceVariant.withOpacity(0.6)
-                                  : AppColors.onSurfaceVariant,
-                          decoration:
-                              task.isCompleted
-                                  ? TextDecoration.lineThrough
-                                  : null,
+                          color: task.isCompleted
+                              ? AppColors.onSurfaceVariant.withOpacity(0.6)
+                              : AppColors.onSurfaceVariant,
+                          decoration: task.isCompleted
+                              ? TextDecoration.lineThrough
+                              : null,
                         ),
                       ),
                     ],

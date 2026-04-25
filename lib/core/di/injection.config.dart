@@ -30,6 +30,7 @@ import '../../features/tasks/data/datasources/task_remote_data_source.dart'
 import '../../features/tasks/data/repos/task_repo.dart' as _i712;
 import '../../features/tasks/data/repos/task_repo_impl.dart' as _i1033;
 import '../../features/tasks/data/services/sync_service.dart' as _i267;
+import '../../features/tasks/presentation/manager/favorite_cubit.dart' as _i218;
 import '../../features/tasks/presentation/manager/task_cubit.dart' as _i121;
 import '../database/db_helper.dart' as _i880;
 import '../database/task_dao.dart' as _i695;
@@ -77,6 +78,12 @@ _i174.GetIt init(
       gh<_i695.TaskDao>(),
       gh<_i864.TaskRemoteDataSource>(),
       gh<_i267.SyncService>(),
+    ),
+  );
+  gh.factory<_i218.FavoriteCubit>(
+    () => _i218.FavoriteCubit(
+      gh<_i712.TaskRepo>(),
+      gh<_i460.SharedPreferences>(),
     ),
   );
   gh.factory<_i687.ProfileRepo>(

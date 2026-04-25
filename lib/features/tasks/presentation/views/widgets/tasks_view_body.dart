@@ -9,6 +9,7 @@ import '../../../../auth/presentation/manager/auth_cubit.dart';
 import '../../../../auth/presentation/manager/auth_state.dart';
 import '../../manager/task_cubit.dart';
 import '../../manager/task_state.dart';
+import '../../manager/favorite_cubit.dart';
 import '../../../../../core/widgets/app_avatar.dart';
 import 'task_card.dart';
 
@@ -34,6 +35,7 @@ class _TasksViewBodyState extends State<TasksViewBody> {
       final user = authState.user;
       if (user.id != null) {
         context.read<TaskCubit>().init(user.id!);
+        context.read<FavoriteCubit>().init(user.id!);
       }
     }
   }
@@ -46,6 +48,7 @@ class _TasksViewBodyState extends State<TasksViewBody> {
         final user = (state as AuthSuccess).user;
         if (user.id != null) {
           context.read<TaskCubit>().init(user.id!);
+          context.read<FavoriteCubit>().init(user.id!);
         }
       },
       child: Stack(

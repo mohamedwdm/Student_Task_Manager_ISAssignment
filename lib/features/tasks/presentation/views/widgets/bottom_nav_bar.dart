@@ -27,33 +27,59 @@ class CustomBottomNavBar extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            padding: const EdgeInsets.fromLTRB(8, 12, 8, 24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(
-                  context,
-                  index: 0,
-                  icon: Icons.grid_view,
-                  label: 'Tasks',
-                  isActive: currentIndex == 0,
-                  onTap: () => context.go('/tasks'),
+                Expanded(
+                  child: _buildNavItem(
+                    context,
+                    index: 0,
+                    icon: Icons.grid_view,
+                    label: 'Tasks',
+                    isActive: currentIndex == 0,
+                    onTap: () => context.go('/tasks'),
+                  ),
                 ),
-                _buildNavItem(
-                  context,
-                  index: 1,
-                  icon: Icons.add_circle,
-                  label: 'Add',
-                  isActive: currentIndex == 1,
-                  onTap: () => context.push('/add-task'),
+                Expanded(
+                  child: _buildNavItem(
+                    context,
+                    index: 1,
+                    icon: Icons.favorite,
+                    label: 'Favs',
+                    isActive: currentIndex == 3,
+                    onTap: () => context.go('/favorites'),
+                  ),
                 ),
-                _buildNavItem(
-                  context,
-                  index: 2,
-                  icon: Icons.person,
-                  label: 'Profile',
-                  isActive: currentIndex == 2,
-                  onTap: () => context.go('/profile'),
+                Expanded(
+                  child: _buildNavItem(
+                    context,
+                    index: 2,
+                    icon: Icons.add_circle,
+                    label: 'Add',
+                    isActive: currentIndex == 1,
+                    onTap: () => context.go('/add-task'),
+                  ),
+                ),
+                Expanded(
+                  child: _buildNavItem(
+                    context,
+                    index: 3,
+                    icon: Icons.timer,
+                    label: 'Time',
+                    isActive: currentIndex == 4,
+                    onTap: () => context.go('/deadline'),
+                  ),
+                ),
+                Expanded(
+                  child: _buildNavItem(
+                    context,
+                    index: 4,
+                    icon: Icons.person,
+                    label: 'Profile',
+                    isActive: currentIndex == 2,
+                    onTap: () => context.go('/profile'),
+                  ),
                 ),
               ],
             ),
@@ -75,7 +101,7 @@ class CustomBottomNavBar extends StatelessWidget {
       return GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
             color: AppColors.primaryContainer.withOpacity(
               0.2,
@@ -106,7 +132,7 @@ class CustomBottomNavBar extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         color: Colors.transparent,
         child: Column(
           mainAxisSize: MainAxisSize.min,

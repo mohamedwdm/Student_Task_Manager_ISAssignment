@@ -42,4 +42,20 @@ class TaskRemoteDataSource {
       'is_completed': isCompleted,
     });
   }
+
+  Future<dynamic> addFavorite(int taskId) async {
+    return await apiService.patch('/tasks/$taskId/add-favorite', {});
+  }
+
+  Future<dynamic> removeFavorite(int taskId) async {
+    return await apiService.patch('/tasks/$taskId/remove-favorite', {});
+  }
+
+  Future<List<dynamic>> getFavorites(int userId) async {
+    return await apiService.get('/tasks/$userId/favorites');
+  }
+
+  Future<dynamic> getDeadline(int taskId) async {
+    return await apiService.get('/tasks/$taskId/deadline');
+  }
 }

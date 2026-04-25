@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -5,7 +6,17 @@ import 'core/di/injection.dart';
 import 'core/router/app_router.dart';
 import 'features/auth/presentation/manager/auth_cubit.dart';
 import 'features/tasks/presentation/manager/task_cubit.dart';
+import 'features/tasks/presentation/manager/favorite_cubit.dart';
 import 'features/profile/presentation/manager/profile_cubit.dart';
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
 
 class AppBlocObserver extends BlocObserver {
   @override
@@ -17,6 +28,7 @@ class AppBlocObserver extends BlocObserver {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  HttpOverrides.global = MyHttpOverrides();
   
   // Set Bloc observer
   Bloc.observer = AppBlocObserver();
@@ -42,6 +54,9 @@ class StudentTaskManagerApp extends StatelessWidget {
         ),
         BlocProvider(
           create: (_) => getIt<ProfileCubit>(),
+        ),
+        BlocProvider(
+          create: (_) => getIt<FavoriteCubit>(),
         ),
       ],
       child: MaterialApp.router(

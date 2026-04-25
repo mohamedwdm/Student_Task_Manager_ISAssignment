@@ -107,4 +107,44 @@ class TaskRepoImpl implements TaskRepo {
     // 2. Trigger background sync
     syncService.syncPendingTasks().ignore();
   }
+
+  @override
+  Future<void> addFavorite(int taskId) async {
+    try {
+      await remoteDataSource.addFavorite(taskId);
+    } catch (e) {
+      print('DEBUG SYNC ERROR: Failed to add favorite on remote: $e');
+    }
+  }
+
+  @override
+  Future<void> removeFavorite(int taskId) async {
+    try {
+      await remoteDataSource.removeFavorite(taskId);
+    } catch (e) {
+      print('DEBUG SYNC ERROR: Failed to remove favorite on remote: $e');
+    }
+  }
+
+  @override
+  Future<List<TaskModel>> getFavorites(int userId) async {
+    try {
+      final remoteData = await remoteDataSource.getFavorites(userId);
+      return remoteData.map((e) => TaskModel.fromMap(e)).toList();
+    } catch (e) {
+      print('DEBUG SYNC ERROR: Failed to fetch favorites: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getDeadline(int taskId) async {
+    try {
+      final data = await remoteDataSource.getDeadline(taskId);
+      return Map<String, dynamic>.from(data);
+    } catch (e) {
+      print('DEBUG SYNC ERROR: Failed to fetch deadline: $e');
+      return {};
+    }
+  }
 }

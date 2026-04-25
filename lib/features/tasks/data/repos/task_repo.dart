@@ -6,4 +6,12 @@ abstract class TaskRepo {
   Future<void> updateTask(TaskModel task);
   Future<void> deleteTask(int taskId);
   Future<void> toggleComplete(TaskModel task);
+  
+  // Favorites
+  Future<void> addFavorite(int taskId);
+  Future<void> removeFavorite(int taskId);
+  Future<List<TaskModel>> getFavorites(int userId);
+  
+  // Deadline
+  Future<Map<String, dynamic>> getDeadline(int taskId);
 }
