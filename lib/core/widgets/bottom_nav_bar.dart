@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../../core/theme/colors.dart';
+import '../theme/colors.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -66,7 +66,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     context,
                     index: 3,
                     icon: Icons.timer,
-                    label: 'Time',
+                    label: 'Track',
                     isActive: currentIndex == 4,
                     onTap: () => context.go('/deadline'),
                   ),
@@ -117,9 +117,9 @@ class CustomBottomNavBar extends StatelessWidget {
                 label.toUpperCase(),
                 style: const TextStyle(
                   fontFamily: 'Inter',
-                  fontSize: 11,
+                  fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  letterSpacing: 1.5,
+                  letterSpacing: 1.45,
                   color: AppColors.primary,
                 ),
               ),

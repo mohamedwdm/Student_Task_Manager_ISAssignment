@@ -10,7 +10,7 @@ class TaskRemoteDataSource {
   TaskRemoteDataSource(this.apiService);
 
   Future<List<dynamic>> getRemoteTasks(int userId) async {
-    return await apiService.get('/tasks/$userId');
+    return await apiService.get('/users/$userId/tasks');
   }
 
   Future<dynamic> addRemoteTask(TaskModel task) async {
@@ -52,7 +52,7 @@ class TaskRemoteDataSource {
   }
 
   Future<List<dynamic>> getFavorites(int userId) async {
-    return await apiService.get('/tasks/$userId/favorites');
+    return await apiService.get('/users/$userId/favorites');
   }
 
   Future<dynamic> getDeadline(int taskId) async {

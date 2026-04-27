@@ -98,7 +98,7 @@ class TaskRepoImpl implements TaskRepo {
     final updatedTask = task.copyWith(
       isCompleted: isCompleted,
       isSynced: false,
-      syncAction: 'update',
+      syncAction: 'toggle_complete',
     );
     
     // 1. Instantly update local SQL

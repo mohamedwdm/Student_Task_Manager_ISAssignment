@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/colors.dart';
 import 'widgets/profile_view_body.dart';
-import '../../../tasks/presentation/views/widgets/bottom_nav_bar.dart';
+import '../../../../core/widgets/bottom_nav_bar.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});

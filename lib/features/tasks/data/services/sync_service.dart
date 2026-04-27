@@ -98,6 +98,18 @@ class SyncService {
           await remoteDataSource.deleteRemoteTask(task.id!);
           await taskDao.deleteTask(task.id!); // Permanently remove from local now
           break;
+
+        case 'toggle_complete':
+          print('DEBUG SYNC: Pushing TOGGLE_COMPLETE for task ${task.id}');
+          await remoteDataSource.toggleCompleteRemote(
+            task.id!,
+            task.isCompleted,
+          );
+          await taskDao.updateTask(
+            task.id!,
+            task.copyWith(isSynced: true, syncAction: null).toMap(),
+          );
+          break;
           
         default:
           // Just mark as synced if action is unknown or null

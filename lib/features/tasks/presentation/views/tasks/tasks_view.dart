@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/colors.dart';
-import 'widgets/tasks_view_body.dart';
-import 'widgets/bottom_nav_bar.dart';
+import 'package:student_task_manager/core/theme/colors.dart';
+import 'package:student_task_manager/features/tasks/presentation/views/widgets/tasks/tasks_view_body.dart';
+import 'package:student_task_manager/core/widgets/bottom_nav_bar.dart';
 
 class TasksView extends StatelessWidget {
   const TasksView({super.key});

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:student_task_manager/features/tasks/data/models/task_model.dart';
-import '../../../../../core/theme/colors.dart';
-import '../../../../../core/widgets/app_avatar.dart';
-import 'edit_task_form.dart';
+import 'package:student_task_manager/core/theme/colors.dart';
+import 'package:student_task_manager/core/widgets/app_avatar.dart';
+import 'package:student_task_manager/features/tasks/presentation/views/widgets/tasks/edit_task_form.dart';
 
 class EditTaskViewBody extends StatelessWidget {
   final TaskModel taskToEdit;

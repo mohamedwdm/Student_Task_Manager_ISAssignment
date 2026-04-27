@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:student_task_manager/core/theme/colors.dart';
 import 'package:student_task_manager/core/theme/spacing.dart';
 import 'package:student_task_manager/core/theme/text_styles.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:student_task_manager/core/widgets/app_avatar.dart';
+import 'package:student_task_manager/features/auth/presentation/manager/auth_cubit.dart';
+import 'package:student_task_manager/features/auth/presentation/manager/auth_state.dart';
+import 'package:student_task_manager/features/tasks/presentation/manager/favorite_cubit.dart';
+import 'package:student_task_manager/features/tasks/presentation/manager/task_cubit.dart';
+import 'package:student_task_manager/features/tasks/presentation/manager/task_state.dart';
 
-import '../../../../../core/theme/colors.dart';
-import '../../../../auth/presentation/manager/auth_cubit.dart';
-import '../../../../auth/presentation/manager/auth_state.dart';
-import '../../manager/task_cubit.dart';
-import '../../manager/task_state.dart';
-import '../../manager/favorite_cubit.dart';
-import '../../../../../core/widgets/app_avatar.dart';
 import 'task_card.dart';
 
 class TasksViewBody extends StatefulWidget {
@@ -145,10 +145,9 @@ class _TasksViewBodyState extends State<TasksViewBody> {
                           double completionRate = 0;
                           if (state is TaskLoaded) {
                             final total = state.allTasks.length;
-                            final completed =
-                                state.allTasks
-                                    .where((t) => t.isCompleted)
-                                    .length;
+                            final completed = state.allTasks
+                                .where((t) => t.isCompleted)
+                                .length;
                             activeCount = total - completed;
                             if (total > 0) {
                               completionRate = (completed / total) * 100;
@@ -328,15 +327,11 @@ class _TasksViewBodyState extends State<TasksViewBody> {
                                 padding: const EdgeInsets.only(bottom: 24.0),
                                 child: TaskCard(
                                   task: task,
-                                  onToggle:
-                                      () => context
-                                          .read<TaskCubit>()
-                                          .toggleComplete(task),
-                                  onEdit:
-                                      () => context.push(
-                                        '/edit-task',
-                                        extra: task,
-                                      ),
+                                  onToggle: () => context
+                                      .read<TaskCubit>()
+                                      .toggleComplete(task),
+                                  onEdit: () =>
+                                      context.push('/edit-task', extra: task),
                                   onDelete: () {
                                     if (task.id != null) {
                                       context.read<TaskCubit>().deleteTask(

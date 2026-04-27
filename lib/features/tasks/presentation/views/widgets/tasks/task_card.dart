@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:student_task_manager/core/theme/colors.dart';
 import 'package:student_task_manager/features/tasks/presentation/manager/favorite_cubit.dart';
 import 'package:student_task_manager/features/tasks/presentation/manager/favorite_state.dart';
-import '../../../../../core/widgets/app_card.dart';
-import '../../../../../core/theme/spacing.dart';
-import '../../../../../core/theme/text_styles.dart';
-import '../../../data/models/task_model.dart';
+import 'package:student_task_manager/core/widgets/app_card.dart';
+import 'package:student_task_manager/core/theme/spacing.dart';
+import 'package:student_task_manager/core/theme/text_styles.dart';
+import 'package:student_task_manager/features/tasks/data/models/task_model.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -122,7 +122,7 @@ class TaskCard extends StatelessWidget {
                         ),
                         onPressed: () => context
                             .read<FavoriteCubit>()
-                            .toggleFavorite(task.id ?? -1),
+                            .toggleFavorite(task.id ?? -1, task: task),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         splashRadius: 20,

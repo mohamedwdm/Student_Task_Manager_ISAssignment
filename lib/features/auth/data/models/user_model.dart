@@ -22,13 +22,13 @@ class UserModel {
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
       id: (map['id'] ?? map['user_id']) as int?,
-      fullName: (map['full_name'] ?? map['name'] ?? '') as String,
-      gender: map['gender'] as String?,
+      fullName: (map['full_name'] ?? map['name'] ?? map['fullName'] ?? '') as String,
+      gender: (map['gender'] ?? map['sex']) as String?,
       email: (map['email'] ?? '') as String,
-      studentId: (map['student_id'] ?? '') as String,
-      academicLevel: map['academic_level'] as int?,
+      studentId: (map['student_id'] ?? map['studentId'] ?? map['id_student'] ?? '').toString(),
+      academicLevel: (map['academic_level'] ?? map['academicLevel'] ?? map['level']) as int?,
       password: (map['password'] ?? '') as String,
-      profilePhoto: map['profile_photo'] as String?,
+      profilePhoto: (map['profile_photo'] ?? map['profilePhoto'] ?? map['photo']) as String?,
     );
   }
 

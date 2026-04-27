@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:student_task_manager/core/theme/colors.dart';
 import 'package:student_task_manager/core/theme/spacing.dart';
@@ -9,7 +8,7 @@ import 'package:student_task_manager/core/widgets/app_card.dart';
 import 'package:student_task_manager/features/tasks/presentation/manager/task_cubit.dart';
 import 'package:student_task_manager/features/tasks/presentation/manager/task_state.dart';
 import 'package:student_task_manager/features/tasks/data/models/task_model.dart';
-import 'package:student_task_manager/features/tasks/presentation/views/widgets/bottom_nav_bar.dart';
+import 'package:student_task_manager/core/widgets/bottom_nav_bar.dart';
 
 class DeadlineView extends StatefulWidget {
   const DeadlineView({super.key});
@@ -48,10 +47,7 @@ class _DeadlineViewState extends State<DeadlineView> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.onSurface),
-          onPressed: () => context.pop(),
-        ),
+        automaticallyImplyLeading: false,
         title: Text(
           'DEADLINE TRACKER',
           style: AppTextStyles.titleMedium.copyWith(
@@ -84,11 +80,15 @@ class _DeadlineViewState extends State<DeadlineView> {
                   decoration: BoxDecoration(
                     color: AppColors.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.outline.withOpacity(0.2)),
+                    border: Border.all(
+                      color: AppColors.outline.withOpacity(0.2),
+                    ),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<TaskModel>(
-                      value: _selectedTask,
+                      value: tasks.contains(_selectedTask)
+                          ? _selectedTask
+                          : null,
                       isExpanded: true,
                       hint: const Text('Choose a task'),
                       items: tasks.map((task) {
@@ -120,7 +120,9 @@ class _DeadlineViewState extends State<DeadlineView> {
                         const SizedBox(height: 16),
                         _buildInfoRow(
                           'Deadline',
-                          DateFormat('MMMM d, yyyy').format(DateTime.parse(_selectedTask!.dueDate)),
+                          DateFormat(
+                            'MMMM d, yyyy',
+                          ).format(DateTime.parse(_selectedTask!.dueDate)),
                           Icons.calendar_today,
                         ),
                         const SizedBox(height: 12),
@@ -135,21 +137,36 @@ class _DeadlineViewState extends State<DeadlineView> {
                           children: [
                             Text(
                               'REMAINING TIME',
-                              style: AppTextStyles.labelSmall.copyWith(letterSpacing: 1.5),
+                              style: AppTextStyles.labelSmall.copyWith(
+                                letterSpacing: 1.5,
+                              ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
-                                color: _calculateRemainingTime(_selectedTask!.dueDate) == 'Expired'
+                                color:
+                                    _calculateRemainingTime(
+                                          _selectedTask!.dueDate,
+                                        ) ==
+                                        'Expired'
                                     ? AppColors.errorContainer
                                     : AppColors.primaryContainer,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                _calculateRemainingTime(_selectedTask!.dueDate).toUpperCase(),
+                                _calculateRemainingTime(
+                                  _selectedTask!.dueDate,
+                                ).toUpperCase(),
                                 style: AppTextStyles.labelMedium.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: _calculateRemainingTime(_selectedTask!.dueDate) == 'Expired'
+                                  color:
+                                      _calculateRemainingTime(
+                                            _selectedTask!.dueDate,
+                                          ) ==
+                                          'Expired'
                                       ? AppColors.error
                                       : AppColors.primary,
                                 ),
@@ -165,7 +182,9 @@ class _DeadlineViewState extends State<DeadlineView> {
                     child: Center(
                       child: Text(
                         'Select a task to track its deadline',
-                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.outline),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.outline,
+                        ),
                       ),
                     ),
                   ),

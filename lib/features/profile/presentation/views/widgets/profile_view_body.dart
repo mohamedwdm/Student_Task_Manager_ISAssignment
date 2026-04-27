@@ -187,6 +187,15 @@ class _ProfileViewBodyState extends State<ProfileViewBody> {
           fullName = state.user.fullName;
           email = state.user.email;
           studentId = state.user.studentId;
+          
+          // 🛡️ Fallback: If studentId is empty, try to extract it from email
+          if (studentId.isEmpty && email.contains('@')) {
+            final prefix = email.split('@').first;
+            if (RegExp(r'^\d+$').hasMatch(prefix)) {
+              studentId = prefix;
+            }
+          }
+          
           levelText = _getAcademicLevelText(state.user.academicLevel);
           profilePhoto = state.user.profilePhoto;
         }
@@ -194,12 +203,21 @@ class _ProfileViewBodyState extends State<ProfileViewBody> {
         ImageProvider defaultImage = const NetworkImage(
           'https://lh3.googleusercontent.com/aida-public/AB6AXuAiHPrOKwVpkZwogzB3lAsD-B6J2N56xxPJGh1JfOozSucJS2c9JwmDkkAeY0HlBlAzoVoxFw3U7GSjXQroVfWG2hRettceBluvmJXi1PXNmk4OZBPu7FTr24ogYALID2F72ZCpFgmmjSbUxXW4HmUv0JgorDrkS5LiQrzNHQgAvXhBTUc85VHVFPeHRYPFl_GJdIFziSR1w7qyeW5Fx2M4yq8n_7FVXTGghCYs2x_gfg4NNIRDmFEz5rxcjUjOUTpAhCQtBXEZOZQ',
         );
-        ImageProvider avatarImage =
-            profilePhoto != null && profilePhoto.isNotEmpty
-                ? (profilePhoto.startsWith('http')
-                    ? NetworkImage(profilePhoto)
-                    : FileImage(File(profilePhoto)) as ImageProvider)
-                : defaultImage;
+        ImageProvider avatarImage;
+        if (profilePhoto != null && profilePhoto!.isNotEmpty) {
+          if (profilePhoto!.startsWith('http')) {
+            avatarImage = NetworkImage(profilePhoto!);
+          } else {
+            final file = File(profilePhoto!);
+            if (file.existsSync()) {
+              avatarImage = FileImage(file);
+            } else {
+              avatarImage = defaultImage;
+            }
+          }
+        } else {
+          avatarImage = defaultImage;
+        }
 
         return SafeArea(
           child: CustomScrollView(
@@ -498,7 +516,10 @@ class _ProfileViewBodyState extends State<ProfileViewBody> {
                       ],
                     ),
                   ),
-                  if (iconWidget != null) iconWidget,
+                  if (iconWidget != null)
+                    iconWidget
+                  else if (icon != null)
+                    Icon(icon, color: AppColors.primary),
                 ],
               ),
     );

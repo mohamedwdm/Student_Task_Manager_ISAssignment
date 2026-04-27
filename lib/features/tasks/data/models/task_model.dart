@@ -83,8 +83,16 @@ class TaskModel {
       'title': title,
       'description': description,
       'due_date': dueDate,
-      'priority': priority,
-      'is_completed': isCompleted,
     };
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TaskModel &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

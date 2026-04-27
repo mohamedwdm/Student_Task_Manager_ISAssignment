@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/theme/colors.dart';
-import '../../../../../core/widgets/app_avatar.dart';
-import 'add_task_form.dart';
+import 'package:student_task_manager/core/theme/colors.dart';
+import 'package:student_task_manager/core/widgets/app_avatar.dart';
+import 'package:student_task_manager/features/tasks/presentation/views/widgets/tasks/add_task_form.dart';
 
 class AddTaskViewBody extends StatelessWidget {
   const AddTaskViewBody({super.key});

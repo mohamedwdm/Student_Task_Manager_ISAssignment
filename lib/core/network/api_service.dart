@@ -19,7 +19,7 @@ class ApiService {
           'Accept': 'application/json',
           'User-Agent': 'Flutter-Student-Task-Manager',
         },
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 30));
       return _handleResponse(response);
     } catch (e) {
       print('DEBUG API ERROR: $e');
@@ -38,7 +38,7 @@ class ApiService {
           'User-Agent': 'Flutter-Student-Task-Manager',
         },
         body: json.encode(data),
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 30));
       return _handleResponse(response);
     } catch (e) {
       print('DEBUG API ERROR: $e');
@@ -57,7 +57,7 @@ class ApiService {
           'User-Agent': 'Flutter-Student-Task-Manager',
         },
         body: json.encode(data),
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 30));
       return _handleResponse(response);
     } catch (e) {
       print('DEBUG API ERROR: $e');
@@ -76,7 +76,7 @@ class ApiService {
           'User-Agent': 'Flutter-Student-Task-Manager',
         },
         body: data != null ? json.encode(data) : null,
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 30));
       return _handleResponse(response);
     } catch (e) {
       print('DEBUG API ERROR: $e');
@@ -93,7 +93,7 @@ class ApiService {
           'Accept': 'application/json',
           'User-Agent': 'Flutter-Student-Task-Manager',
         },
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 30));
       return _handleResponse(response);
     } catch (e) {
       print('DEBUG API ERROR: $e');

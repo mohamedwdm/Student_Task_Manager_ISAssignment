@@ -4,13 +4,13 @@ import 'package:student_task_manager/features/profile/presentation/views/profile
 
 // Import views
 import '../../features/auth/presentation/views/login_view.dart';
-import '../../features/tasks/presentation/views/tasks_view.dart';
-import '../../features/tasks/presentation/views/add_task_view.dart';
-import '../../features/tasks/presentation/views/edit_task_view.dart';
+import '../../features/tasks/presentation/views/tasks/tasks_view.dart';
+import '../../features/tasks/presentation/views/tasks/add_task_view.dart';
+import '../../features/tasks/presentation/views/tasks/edit_task_view.dart';
 import '../../features/tasks/data/models/task_model.dart';
 import '../../features/auth/presentation/views/splash_view.dart';
-import '../../features/tasks/presentation/views/favorite_tasks_view.dart';
-import '../../features/tasks/presentation/views/deadline_view.dart';
+import '../../features/tasks/presentation/views/favorites/favorite_tasks_view.dart';
+import '../../features/tasks/presentation/views/deadline/deadline_view.dart';
 
 class AppRouter {
   static final router = GoRouter(
